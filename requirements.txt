@@ -1,0 +1,200 @@
+import tweepy
+import pandas as pd
+import json
+import yaml
+
+def fetch_tweets(config):
+    with open('credentials.json') as f:
+        creds = json.load(f)
+    client = tweepy.Client(bearer_token=creds['twitter_bearer_token'], wait_on_rate_limit=True)
+    tweets = []
+    paginator = tweepy.Paginator(
+        client.search_recent_tweets,
+        query=config['twitter_query'] + f" lang:id",
+        tweet_fields=['created_at', 'text', 'author_id', 'lang'],
+        max_results=100
+    )
+    for tweet in paginator.flatten(limit=config['max_tweets']):
+        tweets.append({
+            'id': tweet.id,
+            'text': tweet.text,
+            'created_at': tweet.created_at,
+            'author_id': tweet.author_id,
+            'lang': tweet.lang,
+            'source': 'twitter'
+        })
+    df = pd.DataFrame(tweets)
+    df.to_csv('tweets.csv', index=False)
+    print(f"Fetched {len(df)} tweets to tweets.csv")
+    return df
+
+if __name__ == '__main__':
+    with open('config.yaml') as f:
+        config = yaml.safe_load(f)
+    fetch_tweets(config)
+```
+```
+import pdfplumber
+import pandas as pd
+import yaml
+from utils import clean_text
+
+def extract_text_from_pdf(pdf_path):
+    texts = []
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            page_text = page.extract_text()
+            if page_text:
+                texts.extend([line for line in page_text.split('\n') if line.strip()])
+    return texts
+
+def pdf_to_csv(config):
+    pdf_path = config['pdf_path']
+    texts = extract_text_from_pdf(pdf_path)
+    df = pd.DataFrame({'id': [f'pdf_{i}' for i in range(len(texts))],
+                       'text': [clean_text(t) for t in texts],
+                       'source': 'pdf'})
+    df.to_csv('pdf_data.csv', index=False)
+    print(f"Extracted {len(df)} lines from {pdf_path} to pdf_data.csv")
+    return df
+
+if __name__ == '__main__':
+    with open('config.yaml') as f:
+        config = yaml.safe_load(f)
+    pdf_to_csv(config)
+```
+```
+import pandas as pd
+
+def combine_csvs(csv_list, out_csv='all_data.csv'):
+    dfs = [pd.read_csv(f) for f in csv_list]
+    all_df = pd.concat(dfs, ignore_index=True)
+    all_df = all_df.drop_duplicates(subset='text')
+    all_df.to_csv(out_csv, index=False)
+    print(f"Combined {len(all_df)} rows to {out_csv}")
+    return all_df
+
+if __name__ == '__main__':
+    combine_csvs(['tweets.csv', 'pdf_data.csv'])
+```
+```
+import chromadb
+from chromadb.config import Settings
+
+def get_chroma_collection(collection_name='multi_source', persist_directory='chroma_db'):
+    client = chromadb.Client(Settings(
+        persist_directory=persist_directory,
+        chroma_db_impl="duckdb+parquet"
+    ))
+    if collection_name in [c.name for c in client.list_collections()]:
+        collection = client.get_collection(collection_name)
+    else:
+        collection = client.create_collection(collection_name)
+    return collection
+```
+```
+import pandas as pd
+from sentence_transformers import SentenceTransformer
+from chroma_store import get_chroma_collection
+from utils import clean_text, chunk_text, setup_logger
+import yaml
+
+def embed_and_store(csv_path='all_data.csv', config=None):
+    setup_logger()
+    df = pd.read_csv(csv_path)
+    df['text'] = df['text'].apply(clean_text)
+    df = df.drop_duplicates(subset='text')
+    model = SentenceTransformer(config['embedding_model'])
+    collection = get_chroma_collection(config['chroma_collection'])
+
+    # Check existing IDs to avoid re-inserting
+    existing_ids = set(collection.get(ids=None, include=['ids'])['ids'])
+    new_rows = df[~df['id'].astype(str).isin(existing_ids)]
+
+    all_ids, all_texts, all_embeddings, all_metas = [], [], [], []
+    for _, row in new_rows.iterrows():
+        chunks = chunk_text(row['text'], config['chunk_size'], config['chunk_overlap'])
+        for i, chunk in enumerate(chunks):
+            chunk_id = f"{row['id']}_chunk{i}"
+            all_ids.append(chunk_id)
+            all_texts.append(chunk)
+            all_metas.append({**row.to_dict(), 'chunk': i})
+    if all_texts:
+        all_embeddings = model.encode(all_texts, show_progress_bar=True)
+        collection.upsert(
+            ids=all_ids,
+            embeddings=all_embeddings,
+            documents=all_texts,
+            metadatas=all_metas
+        )
+    print(f"Stored {len(all_ids)} new chunks in ChromaDB.")
+
+if __name__ == '__main__':
+    with open('config.yaml') as f:
+        config = yaml.safe_load(f)
+    embed_and_store('all_data.csv', config)
+```
+```
+from sentence_transformers import SentenceTransformer
+from chroma_store import get_chroma_collection
+import openai
+from utils import setup_logger
+import yaml
+
+def rag_query(user_query, config, filter_metadata=None):
+    setup_logger()
+    model = SentenceTransformer(config['embedding_model'])
+    query_vec = model.encode([user_query])[0]
+    collection = get_chroma_collection(config['chroma_collection'])
+    results = collection.query(
+        query_embeddings=[query_vec],
+        n_results=config['top_k'],
+        include=['documents', 'metadatas'],
+        where=filter_metadata
+    )
+    context = '\n'.join(results['documents'][0])
+    meta_info = '\n'.join([str(m) for m in results['metadatas'][0]])
+    openai.api_key = config['openai_api_key']
+    prompt = f"""You are an expert assistant. Use the following context and metadata to answer the question as accurately as possible.
+Context:
+{context}
+
+Metadata:
+{meta_info}
+
+Question: {user_query}
+Answer (in Bahasa Indonesia):"""
+    response = openai.Completion.create(
+        engine='text-davinci-003',
+        prompt=prompt,
+        max_tokens=300
+    )
+    print(response.choices[0].text.strip())
+
+if __name__ == '__main__':
+    with open('config.yaml') as f:
+        config = yaml.safe_load(f)
+    rag_query('Apa perkembangan terbaru AI?', config)
+```
+```
+import re
+
+def clean_text(text):
+    text = re.sub(r'http\S+', '', text)
+    text = re.sub(r'[^w\s]', '', text)
+    return text.strip()
+```
+```
+tweepy
+pandas
+sentence-transformers
+chromadb
+openai
+pdfplumber
+pyyaml
+schedule
+nltk
+sastrawi
+spacy
+```
+```
