@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 """
 Integrated Twitter Pipeline
-Collects tweets every 2 hours, preprocesses them, and saves automatically
+Collects tweets, preprocesses, embeds, and upserts to Qdrant
 """
 
 import os
 import sys
 import time
-import schedule
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 from twitter_fetch import fetch_with_harvest
 import yaml
+from sentence_transformers import SentenceTransformer
+from utils import clean_text, chunk_text
+from qdrant_store import upsert_embeddings
+import uuid
+import schedule
 
 def integrated_collection_and_preprocessing():
-    """Complete pipeline: collect tweets, preprocess, and save"""
+    """Complete pipeline: collect tweets, preprocess, embed, and upsert to Qdrant"""
 
     print("\n" + "=" * 60)
     print(f"🔄 Integrated Twitter Pipeline - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -53,7 +57,6 @@ def integrated_collection_and_preprocessing():
             def better_clean_text(text):
                 if not isinstance(text, str):
                     return ""
-
                 import re, string
                 text = text.lower()
                 text = re.sub(r'&amp;', 'dan', text)
@@ -66,7 +69,6 @@ def integrated_collection_and_preprocessing():
                 text = re.sub(r'[^\w\s]', '', text)
                 text = re.sub(r'\s+', ' ', text)
                 text = re.sub(r'\b[a-z]\b', '', text)
-
                 stopwords = [
                     'yang','dan','di','ke','dari','untuk','dengan','ini','itu','atau','juga','bisa',
                     'akan','sudah','masih','belum','tidak','bukan','ada','saya','kamu','dia','mereka',
@@ -108,87 +110,46 @@ def integrated_collection_and_preprocessing():
         df_raw.to_csv(backup_raw, index=False)
         df_processed.to_csv(backup_processed, index=False)
 
-        # Step 4: Update master files
-        master_raw = 'tweets_master_raw.csv'
-        master_processed = 'tweets_master_processed.csv'
-
-        def append_and_dedup(existing_path, new_df, dedup_col):
-            if os.path.exists(existing_path) and os.path.getsize(existing_path) > 10:
-                try:
-                    df_existing = pd.read_csv(existing_path)
-                    df_all = pd.concat([df_existing, new_df], ignore_index=True)
-                    df_all = df_all.drop_duplicates(subset=[dedup_col])
-                except Exception as e:
-                    print(f"⚠️  Error reading {existing_path}: {e}")
-                    df_all = new_df
-            else:
-                df_all = new_df
-            return df_all
-
-        dedup_col_raw = 'id_str' if 'id_str' in df_raw.columns else text_column
-        df_master_raw = append_and_dedup(master_raw, df_raw, dedup_col_raw)
-        df_master_raw.to_csv(master_raw, index=False)
-
-        dedup_col_processed = 'id' if 'id' in df_processed.columns else 'original_text'
-        df_master_processed = append_and_dedup(master_processed, df_processed, dedup_col_processed)
-        df_master_processed.to_csv(master_processed, index=False)
-
-        # Step 5: Summary
-        print("\n" + "=" * 60)
-        print("📊 PIPELINE SUMMARY")
-        print("=" * 60)
-        print(f"✅ Tweets collected: {len(df_raw)}")
-        print(f"✅ Preprocessing completed")
-        print(f"✅ Backup saved: {backup_raw}")
-        print(f"✅ Backup saved: {backup_processed}")
-        print(f"✅ Master files updated")
-        print(f"📁 Files created:")
-        print(f"   - Raw data: {backup_raw}")
-        print(f"   - Processed data: {backup_processed}")
-        print(f"   - Master raw: {master_raw}")
-        print(f"   - Master processed: {master_processed}")
-
+        # Step 4: Embedding & upsert ke Qdrant
         if not df_processed.empty and 'processed_text' in df_processed.columns:
-            print(f"\n📝 Sample processed tweets:")
-            for i, text in enumerate(df_processed['processed_text'].head(3)):
-                print(f"   {i+1}. {text[:80]}...")
+            print("\n🚀 Langsung embedding dan upsert ke Qdrant...")
+            df_embed = df_processed.copy()
+            df_embed['text'] = df_embed['processed_text']
+            df_embed = df_embed.drop_duplicates(subset='text')
+            model = SentenceTransformer(config['embedding_model'])
+            all_ids, all_texts, all_metas = [], [], []
+            for idx, row in df_embed.iterrows():
+                from utils import chunk_text
+                chunks = chunk_text(row['text'], config['chunk_size'], config['chunk_overlap'])
+                for i, chunk in enumerate(chunks):
+                    chunk_id = str(uuid.uuid4())
+                    all_ids.append(chunk_id)
+                    all_texts.append(chunk)
+                    all_metas.append({**row.to_dict(), 'chunk': i})
+            if all_texts:
+                all_embeddings = model.encode(all_texts, show_progress_bar=True)
+                upsert_embeddings(
+                    collection_name=config['qdrant_collection'],
+                    embeddings=all_embeddings,
+                    texts=all_texts,
+                    metadatas=all_metas,
+                    ids=all_ids
+                )
+            print(f"Stored {len(all_ids)} new chunks in Qdrant.")
 
-        next_run = datetime.now() + timedelta(hours=2)
-        print(f"\n⏰ Next collection at: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
-        print("✅ Pipeline completed successfully!")
+        print("\n✅ Pipeline completed successfully!")
 
     except Exception as e:
         print(f"❌ Error in pipeline: {e}")
         import traceback
         traceback.print_exc()
 
-def main():
-    print("🚀 Starting Integrated Twitter Pipeline System")
-    print("=" * 60)
-    print("⏰ Schedule: Every 2 hours")
-    print("🎯 Target: 10 tweets per collection")
-    print("🏷️  Hashtags: #indihome, #telkomIndonesia, #telkom, #gangguanTelkom")
-    print("🔧 Features: Auto collection + preprocessing + backup")
-    print("📁 Output: Multiple files with timestamps")
-    print("=" * 60)
-
-    os.makedirs('backup', exist_ok=True)
-    os.makedirs('tweets-data', exist_ok=True)
-
-    schedule.every(2).hours.do(integrated_collection_and_preprocessing)
-    print(f"\n🔄 Running initial pipeline at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+if __name__ == '__main__':
+    # Jalankan sekali saat start
     integrated_collection_and_preprocessing()
-
-    print("\n🔄 Scheduler started. Press Ctrl+C to stop.")
-    print("⏰ Will run every 2 hours automatically...")
+    # Jadwalkan setiap 2 jam
+    schedule.every(2).hours.do(integrated_collection_and_preprocessing)
+    print("Scheduler aktif, pipeline akan jalan setiap 2 jam.")
     while True:
         schedule.run_pending()
         time.sleep(60)
-
-if __name__ == '__main__':
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n🛑 Stopping integrated Twitter pipeline...")
-        print("👋 Goodbye!")
-        sys.exit(0)
