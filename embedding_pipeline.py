@@ -14,8 +14,9 @@ def combine_clean_embed(csv_list, config):
     dfs = [pd.read_csv(f) for f in csv_list]
     all_df = pd.concat(dfs, ignore_index=True)
     # Coba beberapa nama kolom umum
-    for col in ['processed_text', 'original_text', 'text', 'Tweet', 'tweet_text', 'isi']:
+    for col in ['processed_text', 'original_text', 'text', 'Tweet', 'tweet_text', 'isi', 'content']:
         if col in all_df.columns:
+            print(f"Menggunakan kolom '{col}' untuk teks.")
             all_df['text'] = all_df[col].apply(clean_text)
             break
     else:
@@ -46,7 +47,7 @@ def combine_clean_embed(csv_list, config):
     print(f"Stored {len(all_ids)} new chunks in Qdrant.")
 
 if __name__ == '__main__':
-    with open('nyobain/config.yaml') as f:
+    with open('config.yaml') as f:
         config = yaml.safe_load(f)
     # Ambil semua file processed dari backup
     import glob, os
