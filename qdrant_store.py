@@ -58,26 +58,28 @@ def process_csv_files(backup_dir):
     dfs = [pd.read_csv(f) for f in csv_list]
     return dfs
 
-# Path absolut/relatif ke folder backup
-csv_list = glob.glob(r'C:\putriKhairamulya\sms 7\nyobain\backup\*processed*.csv') + \
-             glob.glob(r'C:\putriKhairamulya\sms 7\nyobain\backup\*processed*.CSV')
-csv_list = [f for f in csv_list if os.path.isfile(f)]
-print("File yang akan diproses:", csv_list)
+if __name__ == '__main__':
+    # Contoh utilitas mandiri bila file dijalankan langsung.
+    # Tidak dijalankan saat di-import dari modul lain.
+    backup_dir = os.path.join(os.path.dirname(__file__), 'backup')
+    csv_list = glob.glob(os.path.join(backup_dir, '*processed*.csv'))
+    csv_list = [f for f in csv_list if os.path.isfile(f)]
+    print("File yang akan diproses:", csv_list)
 
-if not csv_list:
-    print("Tidak ada file CSV yang ditemukan di folder backup/.")
-    exit(1)
+    if not csv_list:
+        print("Tidak ada file CSV yang ditemukan di folder backup/.")
+        exit(0)
 
-dfs = []
-for f in csv_list:
-    try:
-        dfs.append(pd.read_csv(f))
-    except Exception as e:
-        print(f"Gagal membaca {f}: {e}")
+    dfs = []
+    for f in csv_list:
+        try:
+            dfs.append(pd.read_csv(f))
+        except Exception as e:
+            print(f"Gagal membaca {f}: {e}")
 
-if not dfs:
-    print("Tidak ada file CSV yang berhasil dibaca.")
-    exit(1)
+    if not dfs:
+        print("Tidak ada file CSV yang berhasil dibaca.")
+        exit(0)
 
-all_df = pd.concat(dfs, ignore_index=True)
-# ... lanjutkan pipeline ...
+    all_df = pd.concat(dfs, ignore_index=True)
+    print(f"Total baris: {len(all_df)}")
