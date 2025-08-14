@@ -185,7 +185,7 @@ def clean_text(text):
     return text.strip()
 ```
 ```
-tweepy
+tweepypip
 pandas
 sentence-transformers
 chromadb
