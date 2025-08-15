@@ -1,4 +1,4 @@
-version: '3.8'
+
 services:
   qdrant:
     image: qdrant/qdrant
@@ -15,7 +15,7 @@ services:
     volumes:
       - .:/app
     working_dir: /app
-    command: python nyobain/integrated_twitter_pipeline.py
+    command: python integrated_twitter_pipeline.py
 
 volumes:
   qdrant_data:

@@ -3,6 +3,8 @@ import yaml
 import os
 from dotenv import load_dotenv
 from utils import setup_logger
+from sentence_transformers import SentenceTransformer
+from qdrant_store import search_qdrant
 
 # Load environment variables from local 'env' file if present
 load_dotenv('env')
@@ -11,8 +13,7 @@ def rag_query(user_query, config):
     setup_logger()
     # Ambil context dari Qdrant
     try:
-        from sentence_transformers import SentenceTransformer
-        from qdrant_store import search_qdrant
+        
         model = SentenceTransformer(config['embedding_model'])
         query_vec = model.encode([user_query])[0]
         hits = search_qdrant(
@@ -50,11 +51,15 @@ def rag_query(user_query, config):
         # Jika gagal mengambil konteks, jangan nebak
         return "Tidak ditemukan konteks yang relevan di dokumen. Mohon perjelas pertanyaan atau gunakan kata kunci lain."
     
-    prompt = (
-        "Anda adalah asisten yang hanya boleh menjawab berdasarkan KONTEN KONTEKS di bawah. "
-        "Jika pertanyaan tidak terjawab oleh konteks atau tidak relevan, jawab tepat: 'Tidak ditemukan'.\n\n" 
-        f"{model_context}\nPertanyaan: {user_query}\nJawaban (Bahasa Indonesia, ringkas, hanya dari konteks):"
-    )
+    prompt = ("Anda adalah asisten AI yang ahli dalam menganalisis informasi. "
+        "Tugas Anda adalah menjawab pertanyaan pengguna secara akurat HANYA berdasarkan 'KONTEN KONTEKS' yang diberikan di bawah. "
+        "Sintesis informasi dari beberapa sumber konteks jika perlu untuk memberikan jawaban yang lengkap.\n\n"
+        "Jika informasi untuk menjawab pertanyaan tidak ada dalam konteks, jawab dengan tegas: 'Informasi tidak ditemukan dalam dokumen yang diberikan.'\n\n"
+        "--- KONTEN KONTEKS ---\n"
+        f"{context}\n"
+        "--- AKHIR KONTEKS ---\n\n"
+        f"Pertanyaan Pengguna: {user_query}\n"
+        "Jawaban (dalam Bahasa Indonesia, berdasarkan HANYA dari konteks di atas):")
 
     # Pakai OpenAI-compatible API (OpenAI atau OpenRouter)
     try:

@@ -2,10 +2,10 @@ twitter_query: "#indihome OR #telkomIndonesia OR #telkom OR #gangguanTelkom lang
 max_tweets: 10
 embedding_model: "all-MiniLM-L6-v2"
 qdrant_collection: "multi_source"
-chunk_size: 256
-chunk_overlap: 32
-top_k: 5
-pdf_path: "tiket_penanganan.pdf"
+chunk_size: 500
+chunk_overlap: 200
+top_k: 7
+pdf_path: "backup/KP.pdf"
 twitter_bearer_token: ""
 harvest_output: "tweets_harvest.csv"
 score_ratio: 0.8      # 0.7-0.9 umum
