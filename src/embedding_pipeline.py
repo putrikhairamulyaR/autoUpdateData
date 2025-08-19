@@ -6,10 +6,7 @@ import glob
 import os
 import uuid
 import pypdf
-
-# Impor fungsi-fungsi pembantu Anda
-# Pastikan file-file ini ada di direktori yang sama
-from qdrant_store import upsert_embeddings
+from src.qdrant_store import upsert_embeddings
 from utils import clean_text, chunk_text, setup_logger
 
 # FUNGSI EKSTRAKSI PDF (TETAP SAMA)

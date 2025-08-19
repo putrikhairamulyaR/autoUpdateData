@@ -13,7 +13,7 @@ from twitter_fetch import fetch_with_harvest
 import yaml
 from sentence_transformers import SentenceTransformer
 from utils import clean_text, chunk_text
-from qdrant_store import upsert_embeddings
+from src.qdrant_store import upsert_embeddings
 import uuid
 import schedule
 

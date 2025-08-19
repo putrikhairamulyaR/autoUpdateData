@@ -4,10 +4,10 @@ import os
 from dotenv import load_dotenv
 from utils import setup_logger
 from sentence_transformers import SentenceTransformer
-from qdrant_store import search_qdrant
+from src.qdrant_store import search_qdrant
 
 # Load environment variables from local 'env' file if present
-load_dotenv('env')
+load_dotenv('.env')
 
 def rag_query(user_query, config):
     setup_logger()

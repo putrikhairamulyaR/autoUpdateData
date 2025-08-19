@@ -2,7 +2,7 @@ import os
 import yaml
 import streamlit as st
 from dotenv import load_dotenv
-from rag import rag_query
+from src.rag import rag_query
 
 
 def load_config(config_path: str = 'config.yaml') -> dict:
