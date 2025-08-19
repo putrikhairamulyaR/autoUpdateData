@@ -2,16 +2,16 @@ import os
 import yaml
 import streamlit as st
 from dotenv import load_dotenv
-from src.rag import rag_query
+from rag import rag_query
 
 
-def load_config(config_path: str = 'config.yaml') -> dict:
+def load_config(config_path: str = '../config.yaml') -> dict:
     with open(config_path, 'r', encoding='utf-8') as f:
         return yaml.safe_load(f)
 
 
 def main() -> None:
-    load_dotenv('env')
+    load_dotenv('.env')
     config = load_config()
 
     st.set_page_config(page_title="Chatbot RAG", page_icon="🤖", layout="wide")
