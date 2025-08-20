@@ -1,4 +1,3 @@
-
 services:
   qdrant:
     image: qdrant/qdrant
@@ -8,14 +7,21 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
 
-  pipeline:
-    build: .
-    depends_on:
-      - qdrant
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
     volumes:
-      - .:/app
-    working_dir: /app
-    command: python integrated_twitter_pipeline.py
+      - minio_data:/data
+    environment:
+      # Mengambil nilai dari file .env
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+    command: server /data --console-address ":9001"
+
+  
 
 volumes:
   qdrant_data:
+  minio_data:

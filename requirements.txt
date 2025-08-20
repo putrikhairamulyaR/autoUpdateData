@@ -13,4 +13,8 @@ python-dotenv
 gradio
 streamlit
 qdrant-client
+minio
+
+luigi
+boto3
 

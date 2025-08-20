@@ -451,3 +451,40 @@
 2025-08-18 23:22:31,662 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
 2025-08-18 23:22:31,667 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
 2025-08-18 23:22:33,373 INFO:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-19 09:33:47,853 INFO:Use pytorch device_name: cpu
+2025-08-19 09:33:47,853 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:33:52,541 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:33:52,576 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:34:28,796 INFO:Use pytorch device_name: cpu
+2025-08-19 09:34:28,796 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:34:33,572 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:34:33,575 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:35:36,776 INFO:Use pytorch device_name: cpu
+2025-08-19 09:35:36,777 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:35:43,347 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:35:43,357 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:37:06,709 INFO:Use pytorch device_name: cpu
+2025-08-19 09:37:06,710 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:37:11,027 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:37:11,034 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:37:13,886 INFO:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-19 09:38:30,206 INFO:Use pytorch device_name: cpu
+2025-08-19 09:38:30,206 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:38:33,086 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:38:33,092 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:38:34,870 INFO:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-19 09:38:55,010 INFO:Use pytorch device_name: cpu
+2025-08-19 09:38:55,010 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:38:59,102 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:38:59,111 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:39:00,652 INFO:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-19 09:39:17,932 INFO:Use pytorch device_name: cpu
+2025-08-19 09:39:17,932 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:39:23,027 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:39:23,031 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:39:24,963 INFO:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"
+2025-08-19 09:56:45,045 INFO:Use pytorch device_name: cpu
+2025-08-19 09:56:45,046 INFO:Load pretrained SentenceTransformer: all-MiniLM-L6-v2
+2025-08-19 09:56:50,327 INFO:HTTP Request: GET http://localhost:6333 "HTTP/1.1 200 OK"
+2025-08-19 09:56:50,333 INFO:HTTP Request: POST http://localhost:6333/collections/multi_source/points/search "HTTP/1.1 200 OK"
+2025-08-19 09:56:52,783 INFO:HTTP Request: POST https://openrouter.ai/api/v1/chat/completions "HTTP/1.1 200 OK"

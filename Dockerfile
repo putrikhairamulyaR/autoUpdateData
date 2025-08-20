@@ -1,10 +1,14 @@
-FROM python:3.10-slim
+# Dockerfile
+FROM python:3.11-slim
 
+# Set working directory
 WORKDIR /app
 
-COPY . /app
+# Copy requirements and install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Copy the rest of the application code
+COPY . .
 
-CMD ["python", "nyobain/integrated_twitter_pipeline.py"]
+# The command to run the application will be specified in docker-compose.yml
